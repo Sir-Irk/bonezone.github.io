@@ -219,7 +219,218 @@ function renderRoulette() {
     }
 }
 
+let plinkoState = {
+    ballX: 300,
+    ballY: 50,
+    currentRow: 0,
+    isActive: false,
+    finalSlot: null,
+    path: []
+};
+
+function renderPlinko() {
+    const canvas = document.getElementById('slotCanvas');
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(25, 46, 20, 1.0)');
+    gradient.addColorStop(1, 'rgba(25, 30, 20, 1.0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Title
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#02D000';
+    ctx.textAlign = 'center';
+
+    // Plinko board dimensions
+    const boardWidth = 400;
+    const boardHeight = 200;
+    const startX = (canvas.width - boardWidth) / 2;
+    const startY = 70;
+    const rows = 7;
+    const cols = 8;
+    const slotSpacing = boardWidth / cols;
+
+    // Draw pegs in proper triangular pattern
+    ctx.fillStyle = '#8B4513';
+    for (let row = 0; row < rows; row++) {
+        const pegsInRow = cols;
+        for (let col = 0; col < pegsInRow; col++) {
+            //const pegX = startX + (row * slotSpacing / 2) + col * slotSpacing + (slotSpacing / 2);
+            const pegX = startX + col * slotSpacing + (slotSpacing / 2);
+            const pegY = startY + row * (boardHeight / rows);
+
+            ctx.beginPath();
+            ctx.arc(pegX, pegY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Store peg positions for collision detection
+            if (!window.pegPositions) window.pegPositions = [];
+            if (window.pegPositions.length < rows * cols) {
+                window.pegPositions.push({ x: pegX, y: pegY, row: row, col: col });
+            }
+        }
+    }
+
+    // Draw slots at bottom
+    const slotY = startY + boardHeight + 20;
+    const multipliers = [100, 50, 25, 10, 10, 25, 50, 100];
+
+    for (let i = 0; i < cols; i++) {
+        const slotX = startX + i * slotSpacing;
+
+        // Slot background
+        ctx.fillStyle = i === 3 || i === 4 ? 'rgba(60, 100, 60)' : (i === 0 || i === 7) ? 'rgba(50, 130, 50)' : 'rgba(50, 110, 50)';
+        ctx.fillRect(slotX, slotY, slotSpacing, 30);
+
+        // Slot border
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(slotX, slotY, slotSpacing, 30);
+
+        // Multiplier text
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${multipliers[i]}x`, slotX + slotSpacing / 2, slotY + 20);
+    }
+
+    // Draw ball
+    if (plinkoState.isActive || plinkoState.finalSlot !== null) {
+        // Draw trail
+        ctx.strokeStyle = 'rgba(255, 8, 88, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        if (plinkoState.path.length > 1) {
+            ctx.moveTo(plinkoState.path[0].x, plinkoState.path[0].y);
+            for (let i = 1; i < plinkoState.path.length; i++) {
+                ctx.lineTo(plinkoState.path[i].x, plinkoState.path[i].y);
+            }
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(250, 10, 10, 1.0)';
+        ctx.beginPath();
+        ctx.arc(plinkoState.ballX, plinkoState.ballY, 9, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    const pad = 8;
+    // Show results
+    if (plinkoState.finalSlot !== null) {
+        const multiplier = multipliers[plinkoState.finalSlot];
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#00FF00';
+        ctx.textAlign = 'center';
+        ctx.fillText(`🎉 ${multiplier}x Multiplier! 🎉`, canvas.width / 2, canvas.height - pad);
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(`Winnings: ${100 * multiplier}`, canvas.width / 2, 340);
+    } else if (plinkoState.isActive) {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Step ${plinkoState.currentRow} of ${rows}`, canvas.width / 2, canvas.height - pad);
+    } else {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText('Click "Step Plinko" to drop the ball!', canvas.width / 2, canvas.height - pad);
+    }
+}
+
+function stepPlinko() {
+    const canvas = document.getElementById('slotCanvas');
+    if (!plinkoState.isActive && plinkoState.finalSlot === null) {
+        // Start new game - reset peg positions
+        window.pegPositions = [];
+        plinkoState.isActive = true;
+        plinkoState.ballX = canvas.width / 2; // Start at center
+        plinkoState.ballY = 50;
+        plinkoState.currentRow = 0;
+        plinkoState.path = [{ x: plinkoState.ballX, y: plinkoState.ballY }];
+        renderPlinko();
+        return;
+    }
+
+    if (!plinkoState.isActive) return;
+
+    const boardWidth = 400;
+    const boardHeight = 200;
+    //const startX = (600 - boardWidth) / 2;
+    const startX = canvas.width / 2;
+    const startY = 70;
+    const rows = 7;
+    const cols = 8;
+    const slotSpacing = boardWidth / cols;
+    const moveMagX = slotSpacing * 1.0;
+
+    if (plinkoState.currentRow < rows) {
+        // Find the pegs in the current row that the ball might hit
+        const currentRowPegs = window.pegPositions.filter(peg => peg.row === plinkoState.currentRow);
+
+        // Find the closest peg to the ball's current position
+        let closestPeg = null;
+        let closestDistance = Infinity;
+
+        for (let peg of currentRowPegs) {
+            const distance = Math.abs(peg.x - plinkoState.ballX);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestPeg = peg;
+            }
+        }
+
+        if (closestPeg) {
+            // Move ball to just above the peg
+            plinkoState.ballY = closestPeg.y + 15;
+
+            // Ball bounces left or right off the peg
+            let bounceDirection = Math.random() < 0.5 ? -1 : 1;
+            const future = plinkoState.ballX + moveMagX * bounceDirection;
+            const thresh = boardWidth / 2;
+            if (Math.abs(startX - future) >= thresh) {
+                bounceDirection = -bounceDirection;
+            }
+            plinkoState.ballX = closestPeg.x + (bounceDirection * moveMagX);
+        }
+
+        plinkoState.path.push({ x: plinkoState.ballX, y: plinkoState.ballY });
+        plinkoState.currentRow++;
+    } else {
+        // Ball reached bottom - determine final slot
+        const boardLeft = (canvas.width / 2 - boardWidth / 2);
+        const relativeX = plinkoState.ballX - boardLeft;
+        plinkoState.finalSlot = Math.floor(relativeX / slotSpacing);
+        plinkoState.finalSlot = Math.max(0, Math.min(cols - 1, plinkoState.finalSlot));
+
+        // Position ball in center of final slot
+        plinkoState.ballX = boardLeft + plinkoState.finalSlot * slotSpacing + slotSpacing * 0.5;
+        plinkoState.ballY = startY + boardHeight + 35;
+        plinkoState.path.push({ x: plinkoState.ballX, y: plinkoState.ballY });
+
+        plinkoState.isActive = false;
+    }
+
+    renderPlinko();
+}
+
+function resetPlinko() {
+    plinkoState = {
+        ballX: 300,
+        ballY: 50,
+        currentRow: 0,
+        isActive: false,
+        finalSlot: null,
+        path: []
+    };
+    renderPlinko();
+}
 // Initialize with slot machine
 window.onload = function () {
-    renderSlotMachine();
+    stepPlinko();
 };
