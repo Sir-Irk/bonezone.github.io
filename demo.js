@@ -11,7 +11,7 @@ const CARD_EMOJIS = {
     'BACK': '🂠'
 };
 
-export function renderSlotMachine() {
+function renderSlotMachine() {
     const canvas = document.getElementById('slotCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -75,7 +75,7 @@ export function renderSlotMachine() {
     ctx.fillText('Bet: $100 | Balance: $5,000', canvas.width / 2, 320);
 }
 
-export function renderBlackjack() {
+function renderBlackjack() {
     const canvas = document.getElementById('slotCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -152,7 +152,7 @@ export function renderBlackjack() {
     }
 }
 
-export function renderRoulette() {
+function renderRoulette() {
     const canvas = document.getElementById('slotCanvas');
     const ctx = canvas.getContext('2d');
 
