@@ -29,7 +29,6 @@ function renderSlotMachine() {
     ctx.font = 'bold 36px Arial';
     ctx.fillStyle = '#FFD700';
     ctx.textAlign = 'center';
-    ctx.fillText('🎰 SLOT MACHINE 🎰', canvas.width / 2, 50);
 
     // Generate random symbols
     const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎', '7️⃣'];
@@ -76,7 +75,7 @@ function renderSlotMachine() {
 }
 
 function renderBlackjack() {
-    const canvas = document.getElementById('slotCanvas');
+    const canvas = document.getElementById('blackjackCanvas');
     const ctx = canvas.getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -153,7 +152,7 @@ function renderBlackjack() {
 }
 
 function renderRoulette() {
-    const canvas = document.getElementById('slotCanvas');
+    const canvas = document.getElementById('rouletteCanvas');
     const ctx = canvas.getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -229,7 +228,7 @@ let plinkoState = {
 };
 
 function renderPlinko() {
-    const canvas = document.getElementById('slotCanvas');
+    const canvas = document.getElementById('plinkoCanvas');
     const ctx = canvas.getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -344,7 +343,7 @@ function renderPlinko() {
 }
 
 function stepPlinko() {
-    const canvas = document.getElementById('slotCanvas');
+    const canvas = document.getElementById('plinkoCanvas');
     if (!plinkoState.isActive && plinkoState.finalSlot === null) {
         // Start new game - reset peg positions
         window.pegPositions = [];
@@ -432,5 +431,8 @@ function resetPlinko() {
 }
 // Initialize with slot machine
 window.onload = function () {
-    stepPlinko();
+    resetPlinko();
+    renderSlotMachine();
+    renderBlackjack();
+    renderRoulette();
 };
