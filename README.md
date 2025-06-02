@@ -1,2 +1,1 @@
-# bonezone.github.io
-Bone zone site
+Test site for learning html/css canvas rendering
